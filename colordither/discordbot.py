@@ -4,7 +4,7 @@ import subprocess
 import traceback
 from matplotlib.colors import to_rgb,to_hex
 
-TOKEN='NTAzNDUyNjQ0MTI0MTMxMzM2.Dq2slg.VWqx4cppVGLwgJ3X8uTAmD4sIX0'
+TOKEN=open("token").read()
 
 client = discord.Client()
 
