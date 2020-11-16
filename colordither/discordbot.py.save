@@ -1,0 +1,60 @@
+import discord
+import colordither
+import subprocess
+
+TOKEN='NTAzNDUyNjQ0MTI0MTMxMzM2.Dq2slg.VWqx4cppVGLwgJ3X8uTAmD4sIX0'
+
+client = discord.Client()
+
+dehexcode=lambda x: tuple(map(lambda y: int(y,16)/255, (x[1:3],x[3:5],x[5:7])))
+fileid=0
+hexes=tuple(map(dehexcode,"""
+#171314 #FFFFFF #FFFF58
+""".split()))
+
+@client.event
+async def on_message(message):
+    global hexes, fileid
+    # we do not want the bot to reply to itself
+    if message.author == client.user:
+        return
+
+    if message.content.startswith('!palette'):
+        print(hexes)
+        f=open("{:06}.pnm".format(fileid),"bw")
+        f.write(colordither.dither_color(message.content[len("!palette "):],hexes,"#000000"))
+        f.close()
+        subprocess.run(["convert", "{0:06}.pnm".format(fileid), "{0:06}.png".format(fileid)])
+        await client.send_file(message.channel, "{0:06}.png".format(fileid))
+
+    if message.content.startswith('!c64'):
+        wscale=2 #1.8+0.1/3
+        pixsize=1
+        downscale=100/pixsize
+        upscale=100*pixsize #*6
+        h=tuple(map(dehexcode,"#000000 #626262 #898989 #adadad #ffffff #9f4e44 #cb7e75 #6d5412 #a1683c #c9d487 #9ae29b #5cab5e #6abfc6 #887ecb #50459b #a057a3".split()))
+        f=open("{:06}.pnm".format(fileid),"bw")
+#        f.write(colordither.dither_color(message.content[len("!c64 "):],h,"#000000","img.transform('','{}%x{}%')".format(downscale/wscale,downscale)))
+        f.write(colordither.dither_color(message.content[len("!c64 "):],h,"#000000","img.transform('','{}%x{}%')".format(downscale/wscale,downscale)))
+        f.close()
+        subprocess.run(["convert", "{0:06}.pnm".format(fileid), "-filter", "point", "-resize", "{}x{}%".format(upscale*wscale,upscale), "{0:06}.png".format(fileid)])
+        await client.send_file(message.channel, "{0:06}.png".format(fileid))
+
+
+    if message.content.startswith('!setpalette'):
+        m = message.content[len("!setpalette "):]
+        print(hexes)
+        hexes=tuple(map(dehexcode,m.split()))
+        msg = 'Palette set to {}'.format(m)
+        print(hexes)
+        await client.send_message(message.channel, msg)
+
+
+@client.event
+async def on_ready():
+    print('Logged in as')
+    print(client.user.name)
+    print(client.user.id)
+    print('------')
+
+client.run(TOKEN)
